@@ -1,13 +1,14 @@
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
+import { IonList } from '@ionic/react';
 import './Tab1.css';
+import Repoitem from '../components/Repoitem';
 
 const Tab1: React.FC = () => {
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Tab 1</IonTitle>
+          <IonTitle>Repositorios</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -16,7 +17,11 @@ const Tab1: React.FC = () => {
             <IonTitle size="large">Tab 1</IonTitle>
           </IonToolbar>
         </IonHeader>
-        <ExploreContainer name="Tab 1 page" />
+        <IonList>
+          <Repoitem name="Repositorio 1" imageUrl="https://avatars.githubusercontent.com/u/9919?s=200&v=4" />
+          <Repoitem name="Repositorio 2" />
+          <Repoitem name="Repositorio 3" imageUrl="https://avatars.githubusercontent.com/u/9919?s=200&v=4" />
+        </IonList>
       </IonContent>
     </IonPage>
   );
