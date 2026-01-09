@@ -9,6 +9,7 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
+  IonToast,
 } from "@ionic/react";
 import { useHistory, useLocation } from "react-router";
 import { useState } from "react";
@@ -23,65 +24,41 @@ export const EditRepo: React.FC = () => {
     owner: string;
   }>();
 
+  const [showToast, setShowToast] = useState(false);
+  
+  // Seteamos el nombre actual como valor inicial de new_name
   const [repoFormData, setRepoFormData] = useState<RepositoryPatch>({
     current_name: location.state?.name || "",
     description: location.state?.description || "",
-    new_name: null,
+    new_name: location.state?.name || "", 
     owner: location.state?.owner || "",
   });
 
-  const setRepoName = (value: string) => {
-    console.log("Actualizando nombre a:", value);
-    setRepoFormData((prevState) => ({ ...prevState, new_name: value }));
-  };
+  const updateRepo = async () => {
+    const newName = repoFormData.new_name?.trim();
 
-  const setRepoDescription = (value: string | null | undefined) => {
-    const desc = value || "";
-    console.log("Actualizando descripción a:", desc);
-    setRepoFormData((prevState) => ({
-      ...prevState,
-      description: desc,
-    }));
-  };
-
-  const updateRepo = () => {
-    console.log("Estado actual completo:", repoFormData);
-    console.log("Actualizando repositorio....");
-
-    let newName = repoFormData.new_name?.trim() || null;
-
-    // Solo validar si el usuario intentó cambiar el nombre
-    if (repoFormData.new_name !== null && (!newName || newName === "")) {
+    // Validación: No permitir enviar si está realmente vacío al dar clic en Guardar
+    if (!newName || newName === "") {
       alert("El nombre del repositorio no puede estar vacío.");
       return;
     }
 
-    // Reemplazar espacios por guiones si hay un nuevo nombre
-    if (newName) {
-      newName = newName.replace(/\s+/g, "-");
-    }
-
-    const trimmedDescription = repoFormData.description?.trim();
-    const finalDescription =
-      trimmedDescription && trimmedDescription !== ""
-        ? trimmedDescription
-        : null;
+    // Reemplazar espacios por guiones para cumplir con el formato de GitHub
+    const finalName = newName.replace(/\s+/g, "-");
 
     const cleanedData: RepositoryPatch = {
       ...repoFormData,
-      new_name: newName,
-      description: finalDescription,
+      new_name: finalName,
     };
 
-    console.log("Datos a enviar:", cleanedData);
-
-    updateRepository(cleanedData)
-      .then(() => {
-        history.push("/tab1");
-      })
-      .catch((error) => {
-        console.error("Error al actualizar el repositorio:", error);
-      });
+    try {
+      await updateRepository(cleanedData);
+      setShowToast(true);
+      // Esperamos un momento para que el usuario vea el mensaje antes de volver
+      setTimeout(() => history.push("/tab1"), 1500);
+    } catch (error) {
+      console.error("Error al actualizar el repositorio:", error);
+    }
   };
 
   return (
@@ -94,22 +71,17 @@ export const EditRepo: React.FC = () => {
           <IonTitle>Editar Repositorio</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large"> Editar Repositorio</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-
+      <IonContent fullscreen className="ion-padding">
         <div className="form-container">
           <IonInput
             className="form-field"
             label="Nombre del Repositorio"
             labelPlacement="floating"
             fill="outline"
-            placeholder="android-proyect"
-            value={repoFormData.new_name || repoFormData.current_name}
-            onIonInput={(e) => setRepoName(e.detail.value!)}
+            placeholder="Nombre del proyecto"
+            // CAMBIO CLAVE: Usamos solo new_name para permitir borrar todo el texto
+            value={repoFormData.new_name} 
+            onIonInput={(e) => setRepoFormData({ ...repoFormData, new_name: e.detail.value! })}
           />
           <IonTextarea
             className="form-field"
@@ -119,12 +91,18 @@ export const EditRepo: React.FC = () => {
             placeholder="Descripción del proyecto"
             rows={6}
             value={repoFormData.description}
-            onIonInput={(e) => setRepoDescription(e.detail.value!)}
+            onIonInput={(e) => setRepoFormData({ ...repoFormData, description: e.detail.value! })}
           />
           <IonButton className="form-field" expand="block" onClick={updateRepo}>
             Guardar Cambios
           </IonButton>
         </div>
+        <IonToast
+          isOpen={showToast}
+          message="Repositorio actualizado correctamente"
+          duration={2000}
+          color="success"
+        />
       </IonContent>
     </IonPage>
   );

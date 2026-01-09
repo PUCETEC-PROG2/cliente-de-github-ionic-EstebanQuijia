@@ -5,10 +5,10 @@
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: 16px; /* Espaciado entre ion-input y textarea */
-	padding: 16px; /* Margen interior del contenedor */
+	gap: 16px; 
+	padding: 16px; 
 }
 .form-field {
 	width: 100%;
-	max-width: 640px; /* Limita el ancho para mejor lectura */
+	max-width: 640px; 
 }

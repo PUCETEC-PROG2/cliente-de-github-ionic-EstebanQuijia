@@ -1,18 +1,17 @@
 import {
   IonContent,
   IonHeader,
-  IonItemSliding,
   IonList,
   IonPage,
   IonTitle,
   IonToolbar,
   useIonViewDidEnter,
-  IonItemOptions,
-  IonItemOption,
   IonIcon,
   IonAlert,
+  IonButton,
+  IonItem,
+  IonLabel,
 } from "@ionic/react";
-
 import { pencil, trash } from "ionicons/icons";
 import "./Tab1.css";
 import RepoItem from "../components/RepoItem";
@@ -28,9 +27,7 @@ import { RepositoryDelete } from "../interfaces/RepositoryDelete";
 const Tab1: React.FC = () => {
   const [repos, setRepos] = useState<RepositoryItem[]>([]);
   const [showAlert, setShowAlert] = useState(false);
-  const [selectedRepo, setSelectedRepo] = useState<RepositoryDelete | null>(
-    null
-  );
+  const [selectedRepo, setSelectedRepo] = useState<RepositoryDelete | null>(null);
 
   const history = useHistory();
 
@@ -52,19 +49,25 @@ const Tab1: React.FC = () => {
       owner: repo.owner,
       repo_name: repo.name,
     });
-
     setShowAlert(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedRepo) {
-      deleteRepository(selectedRepo);
+      const nameToDelete = selectedRepo.repo_name;
       setShowAlert(false);
+      setRepos((prev) => prev.filter(r => r.name !== nameToDelete));
+      try {
+        await deleteRepository(selectedRepo);
+        setTimeout(() => loadRepos(), 2000);
+      } catch (error) {
+        console.error("Error al borrar", error);
+        loadRepos();
+      }
     }
   };
 
   useIonViewDidEnter(() => {
-    console.log("Leyendo repositorios");
     loadRepos();
   });
 
@@ -76,55 +79,76 @@ const Tab1: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Tab 1</IonTitle>
-          </IonToolbar>
-        </IonHeader>
         <IonList inset={true}>
-          {repos.map((repo, index) => (
-            <IonItemSliding key={index}>
-              <RepoItem
-                name={repo.name}
-                imageUrl={repo.imageUrl}
-                owner={repo.owner}
-                description={repo.description}
-                language={repo.language}
-              ></RepoItem>
-              <IonItemOptions>
-                <IonItemOption onClick={() => handleEdit(repo)}>
-                  <IonIcon slot="icon-only" icon={pencil}></IonIcon>
-                </IonItemOption>
-                <IonItemOption
-                  color="danger"
-                  onClick={() => handleDeleteClick(repo)}
-                >
-                  <IonIcon slot="icon-only" icon={trash}></IonIcon>
-                </IonItemOption>
-              </IonItemOptions>
-            </IonItemSliding>
-          ))}
+          {repos.length === 0 ? (
+            <div style={{ textAlign: "center", marginTop: "20px", color: "gray" }}>
+              Cargando repositorios...
+            </div>
+          ) : (
+            repos.map((repo, index) => (
+              <IonItem key={repo.name + index} lines="full">
+                <IonLabel className="ion-text-wrap" style={{ flex: 1 }}>
+                  <RepoItem
+                    name={repo.name}
+                    imageUrl={repo.imageUrl}
+                    owner={repo.owner}
+                    description={repo.description}
+                    language={repo.language}
+
+                  />
+                </IonLabel>
+
+                {/* contenedor de botones */}
+                <div slot="end" style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <IonButton
+                    fill="clear"
+                    onClick={() => handleEdit(repo)}
+                    style={{ margin: '0', height: '40px' }}
+                  >
+                    <IonIcon
+                      icon={pencil}
+                      color="primary"
+                      style={{ fontSize: '24px' }}
+                    />
+                  </IonButton>
+
+                  <IonButton
+                    fill="clear"
+                    onClick={() => handleDeleteClick(repo)}
+                    style={{ margin: '0', height: '40px' }}
+                  >
+                    <IonIcon
+                      icon={trash}
+                      color="danger"
+                      style={{ fontSize: '24px' }}
+                    />
+                  </IonButton>
+                </div>
+              </IonItem>
+            ))
+          )}
         </IonList>
+
+        <IonAlert
+          isOpen={showAlert}
+          onDidDismiss={() => setShowAlert(false)}
+          header="Eliminar Repositorio"
+          message={`¿Borrar "${selectedRepo?.repo_name}"?`}
+          buttons={[
+            { text: "Cancelar", role: "cancel" },
+            {
+              text: "Eliminar",
+              role: "destructive",
+              handler: handleConfirmDelete,
+            },
+          ]}
+        />
       </IonContent>
-      <IonAlert
-        isOpen={showAlert}
-        onDidDismiss={() => setShowAlert(false)}
-        header="Eliminar Repositorio"
-        subHeader={selectedRepo?.repo_name}
-        message="¿Estás seguro de que deseas eliminar este repositorio?"
-        buttons={[
-          {
-            text: "Cancelar",
-            role: "cancel",
-            handler: () => setShowAlert(false),
-          },
-          {
-            text: "Eliminar",
-            role: "destructive",
-            handler: handleConfirmDelete,
-          },
-        ]}
-      ></IonAlert>
     </IonPage>
   );
 };

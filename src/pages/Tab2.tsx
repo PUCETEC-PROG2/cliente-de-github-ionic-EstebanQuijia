@@ -7,83 +7,106 @@ import {
   IonInput,
   IonTextarea,
   IonButton,
+  IonToast,
 } from "@ionic/react";
 import "./Tab2.css";
+import { useState } from "react";
 import { useHistory } from "react-router";
-import { RepositoryItem } from "../interfaces/RepositoryItem";
 import { createRepository } from "../services/GithubServices";
 
 const Tab2: React.FC = () => {
   const history = useHistory();
+  
+  // Control de mensaje
+  const [showToast, setShowToast] = useState(false);
 
-  const repoFormData: RepositoryItem = {
+  // Estado de los datos
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
-    imageUrl: null,
-    owner: null,
-    language: null,
-  };
+  });
 
-  const setRepoName = (value: string) => {
-    repoFormData.name = value;
-  };
-
-  const setRepoDescription = (value: string) => {
-    repoFormData.description = value;
-  };
-
-  const saveRepo = () => {
-    console.log("Guardando repositorio:", repoFormData);
-    if (repoFormData.name.trim() === "") {
+  const saveRepo = async () => {
+    let repoName = formData.name.trim();
+    
+    if (repoName === "") {
       alert("El nombre del repositorio es obligatorio.");
       return;
     }
-    createRepository(repoFormData)
-      .then(() => {
+
+    // Convertir espacios en guiones
+    repoName = repoName.replace(/\s+/g, "-");
+
+    const repoToSave = {
+      name: repoName,
+      description: formData.description,
+      imageUrl: null,
+      owner: null,
+      language: null,
+    };
+
+    try {
+      //  Llamada a la API
+      await createRepository(repoToSave);
+      
+      // mensaje de exito
+      setShowToast(true);
+      
+      // Limpiamos el formulario
+      setFormData({ name: "", description: "" });
+
+      // Tiempo de espera para el mensaje
+      setTimeout(() => {
         history.push("/tab1");
-      })
-      .catch((error) => {
-        console.error("Error al crear el repositorio:", error);
-      });
+      }, 1500);
+
+    } catch (error) {
+      console.error("Error al crear el repositorio:", error);
+      alert("Ocurrió un error al crear el repositorio.");
+    }
   };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Formulario de Repositorio</IonTitle>
+          <IonTitle>Nuevo Repositorio</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Formulario de Repositorio</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+      <IonContent fullscreen className="ion-padding">
         <div className="form-container">
           <IonInput
             className="form-field"
             label="Nombre del Repositorio"
             labelPlacement="floating"
             fill="outline"
-            placeholder="android-proyect"
-            value={repoFormData.name}
-            onIonChange={(e) => setRepoName(e.detail.value!)}
+            placeholder="ej: mi-nuevo-proyecto"
+            value={formData.name}
+            onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
           />
           <IonTextarea
             className="form-field"
-            label="Descripción del Repositorio"
+            label="Descripción (Opcional)"
             labelPlacement="floating"
             fill="outline"
-            placeholder="Descripción del proyecto"
+            placeholder="De qué trata tu proyecto..."
             rows={6}
-            value={repoFormData.description}
-            onIonChange={(e) => setRepoDescription(e.detail.value!)}
+            value={formData.description}
+            onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
           />
           <IonButton className="form-field" expand="block" onClick={saveRepo}>
-            Enviar
+            Crear Repositorio
           </IonButton>
         </div>
+
+        {/* mensaje de exito */}
+        <IonToast
+          isOpen={showToast}
+          message="Repositorio creado correctamente" 
+          duration={2000} 
+          color="success" 
+          onDidDismiss={() => setShowToast(false)} // Resetea el estado
+        />
       </IonContent>
     </IonPage>
   );
